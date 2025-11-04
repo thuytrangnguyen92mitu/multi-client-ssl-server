@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8" />
+    <title>Python Socket Client UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 500px;
+            background: white;
+            margin: 50px auto;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h2 {
+            text-align: center;
+            color: #2a5d9f;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 6px 4px;
+            font-weight: bold;
+        }
+        .btn-green {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-green:hover {
+            background-color: #1e7e34;
+        }
+        .btn-red {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-red:hover {
+            background-color: #a71d2a;
+        }
+        .btn-orange {
+            background-color: #fd7e14;
+            color: white;
+        }
+        .btn-orange:hover {
+            background-color: #e66a00;
+        }
+
+        .input-group {
+            display: flex;
+            margin-top: 15px;
+        }
+        .input-group input {
+            flex-grow: 1;
+            margin-top: 0;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .input-group button {
+            margin: 0;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        .conn-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .conn-group input {
+            margin-top: 0;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+        <h2>Client Control Panel</h2>
+
+        <!-- THIS IS THE NEW SECTION -->
+        <label for="apiPort">Client Bridge Port:</label>
+        <input type="number" id="apiPort" value="5001" style="width: 120px" />
+        <small>This is the port your client.py is running on.</small>
+        <!-- END NEW SECTION -->
+
+        <label for="ip" style="margin-top: 10px">Server IP:</label>
+        <div class="conn-group">
+            <input type="text" id="ip" value="127.0.0.1" />
+            <label for="port" style="margin-top: 0">Server Port:</label>
+            <input type="number" id="port" value="8888" style="width: 120px" />
+        </div>
+
+        <div style="margin-top: 15px">
+            <button
+            class="btn btn-green"
+            id="btnConnect"
+            onclick="connectToServer()"
+            >
+            Connect
+            </button>
+            <button
+            class="btn btn-red"
+            id="btnDisconnect"
+            onclick="disconnectFromServer()"
+            disabled
+            >
+            Disconnect
+            </button>
+        </div>
+
+        <label for="broadcastBoard">Broadcast Board:</label>
+        <textarea
+            id="broadcastBoard"
+            readonly
+            placeholder="Messages from server..."
+            rows="8"
+        ></textarea>
+
+        <label for="message">Message:</label>
+        <div class="input-group">
+            <input type="text" id="message" placeholder="Enter message to send" />
+            <button class="btn btn-orange" onclick="sendMessage()">Send</button>
+        </div>
+        </div>
+
+        <script>
+        // This is no longer a constant. We will build it dynamically.
+        let API_URL = "http://127.0.0.1:5001";
+        let messagePollInterval;
+
+        // --- NEW FUNCTION ---
+        // This function builds the API_URL based on the input field
+        function getApiUrl() {
+            const port = document.getElementById("apiPort").value;
+            return `http://127.0.0.1:${port}`;
+        }
+
+        function log(message) {
+            const board = document.getElementById("broadcastBoard");
+            board.value += message + "\n";
+            board.scrollTop = board.scrollHeight;
+        }
+
+        function connectToServer() {
+            API_URL = getApiUrl(); // Get the correct API port
+            const ip = document.getElementById("ip").value;
+            const port = document.getElementById("port").value;
+
+            fetch(`${API_URL}/connect?ip=${ip}&port=${port}`)
+            .then((res) => res.text())
+            .then((msg) => {
+                log(msg);
+                if (msg.startsWith("✅")) {
+                document.getElementById("btnConnect").disabled = true;
+                document.getElementById("btnDisconnect").disabled = false;
+                document.getElementById("apiPort").disabled = true; // Lock port field
+                messagePollInterval = setInterval(getMessages, 1500);
+                }
+            })
+            .catch((e) =>
+                log(`Error: ${e.message}. Is client.py running on port ${API_URL}?`)
+            );
+        }
+
+        function disconnectFromServer() {
+            API_URL = getApiUrl(); // Ensure we have the correct port
+            fetch(`${API_URL}/disconnect`)
+            .then((res) => res.text())
+            .then((msg) => {
+                log(msg);
+                document.getElementById("btnConnect").disabled = false;
+                document.getElementById("btnDisconnect").disabled = true;
+                document.getElementById("apiPort").disabled = false; // Unlock port field
+                if (messagePollInterval) {
+                clearInterval(messagePollInterval);
+                }
+            })
+            .catch((e) => log(`Error: ${e.message}`));
+        }
+
+        function sendMessage() {
+            API_URL = getApiUrl();
+            const message = document.getElementById("message").value;
+            if (!message) return;
+
+            fetch(`${API_URL}/send?message=${encodeURIComponent(message)}`)
+            .then((res) => res.text())
+            .then((msg) => {
+                log(msg);
+                document.getElementById("message").value = "";
+            })
+            .catch((e) => log(`Error: ${e.message}`));
+        }
+
+        function getMessages() {
+            API_URL = getApiUrl();
+            fetch(`${API_URL}/get_messages`)
+            .then((res) => res.json())
+            .then((messages) => {
+                if (messages.error) {
+                log(messages.error);
+                if (messagePollInterval) {
+                    clearInterval(messagePollInterval);
+                }
+                document.getElementById("btnConnect").disabled = false;
+                document.getElementById("btnDisconnect").disabled = true;
+                document.getElementById("apiPort").disabled = false;
+                } else if (messages.length > 0) {
+                messages.forEach((msg) => log(msg));
+                }
+            })
+            .catch((e) => {
+                log("Error polling for messages. Connection lost.");
+                if (messagePollInterval) {
+                clearInterval(messagePollInterval);
+                }
+            });
+        }
+        </script>
+    </body>
+</html>

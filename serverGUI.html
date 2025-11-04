@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Python Socket Server UI</title>
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 500px;
+            background: white;
+            margin: 50px auto;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h2 {
+            text-align: center;
+            color: #2a5d9f;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 5px;
+            box-sizing: border-box; /* Added for consistent sizing */
+        }
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 6px 4px;
+            font-weight: bold;
+        }
+        .btn-blue {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-blue:hover {
+            background-color: #0056b3;
+        }
+        .btn-green {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-green:hover {
+            background-color: #1e7e34;
+        }
+        .btn-red {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-red:hover {
+            background-color: #a71d2a;
+        }
+        .btn-orange {
+            background-color: #fd7e14;
+            color: white;
+        }
+        .btn-orange:hover {
+            background-color: #e66a00;
+        }
+
+        .input-group {
+            display: flex;
+            margin-top: 15px;
+        }
+        .input-group input {
+            flex-grow: 1;
+            margin-top: 0;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .input-group button {
+            margin: 0;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+        <h2>Server Control Panel</h2>
+
+        <label for="port">Port:</label>
+        <input
+            type="number"
+            id="port"
+            placeholder="Enter port (1024-65535)"
+            min="1024"
+            max="65535"
+        />
+
+        <button class="btn btn-blue" onclick="getInfo()">Get Info</button>
+
+        <label for="ip">Server IP:</label>
+        <input type="text" id="ip" readonly />
+
+        <div style="margin-top: 15px">
+            <button class="btn btn-green" onclick="startServer()">
+            Start Server
+            </button>
+            <button class="btn btn-red" onclick="stopServer()">Stop Server</button>
+        </div>
+
+        <!-- Added Broadcast Feature -->
+        <label for="broadcastMessage" style="margin-top: 15px"
+            >Broadcast Message:</label
+        >
+        <div class="input-group">
+            <input
+            type="text"
+            id="broadcastMessage"
+            placeholder="Enter message to broadcast"
+            />
+            <button class="btn btn-orange" onclick="sendBroadcast()">
+            Broadcast
+            </button>
+        </div>
+
+        <textarea
+            id="log"
+            readonly
+            placeholder="Server logs..."
+            rows="8"
+            style="margin-top: 15px"
+        ></textarea>
+        </div>
+
+        <script>
+        // Base URL for the Flask API
+        const API_URL = "http://127.0.0.1:5000";
+
+        function log(message) {
+            document.getElementById("log").value += message + "\n";
+            // Auto-scroll to bottom
+            document.getElementById("log").scrollTop =
+            document.getElementById("log").scrollHeight;
+        }
+
+        function getInfo() {
+            const port = document.getElementById("port").value;
+            fetch(`${API_URL}/get_info?port=${port}`)
+            .then((response) => {
+                if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then((data) => {
+                if (data.error) {
+                log(`Error: ${data.error}`);
+                } else {
+                document.getElementById("ip").value = data.ip;
+                log(`✅ IP retrieved: ${data.ip}:${data.port}`);
+                }
+            })
+            .catch((e) => {
+                log(`Error: ${e.message}`);
+                log("Is the Python server running?");
+            });
+        }
+
+        function startServer() {
+            const ip = document.getElementById("ip").value;
+            const port = document.getElementById("port").value;
+            if (!ip || !port) {
+            log("Error: Please get IP info first.");
+            return;
+            }
+            fetch(`${API_URL}/start_server?ip=${ip}&port=${port}`)
+            .then((res) => res.text())
+            .then((msg) => {
+                log(msg);
+            })
+            .catch((e) => {
+                log(`Error: ${e.message}`);
+            });
+        }
+
+        function stopServer() {
+            fetch(`${API_URL}/stop_server`)
+            .then((res) => res.text())
+            .then((msg) => {
+                log(msg);
+            })
+            .catch((e) => {
+                log(`Error: ${e.message}`);
+            });
+        }
+
+        function sendBroadcast() {
+            const message = document.getElementById("broadcastMessage").value;
+            if (!message) {
+            log("Error: Cannot broadcast an empty message.");
+            return;
+            }
+
+            fetch(`${API_URL}/broadcast?message=${encodeURIComponent(message)}`)
+            .then((res) => res.text())
+            .then((msg) => {
+                log(msg);
+                document.getElementById("broadcastMessage").value = ""; // Clear input
+            })
+            .catch((e) => {
+                log(`Error: ${e.message}`);
+            });
+        }
+        </script>
+    </body>
+</html>
