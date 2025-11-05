@@ -82,8 +82,8 @@ def connect_route():
         receive_thread = threading.Thread(target=receive_loop, daemon=True)
         receive_thread.start()
         
-        print(f"[CLIENT] Connected to server at {ip}:{port}")
-        return f"✅ Connected to server at {ip}:{port}"
+        print(f"[CLIENT] Đã kết nối đến Server tại {ip}:{port}")
+        return f"Đã kết nối đến Server tại {ip}:{port}"
         
     except ConnectionRefusedError:
         print(f"[CLIENT] Connection refused for {ip}:{port}")
