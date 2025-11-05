@@ -111,24 +111,6 @@ def disconnect_route():
         print(f"[CLIENT] Error during disconnect: {e}")
         return f"Error during disconnect: {e}"
 
-@app.route('/send')
-def send_route():
-    global client_socket, is_connected
-    
-    message = request.args.get('message')
-    if not message:
-        return "Message is required.", 400
-    if not is_connected or not client_socket:
-        return "Error: Not connected to server.", 400
-        
-    try:
-        client_socket.send(message.encode('utf-8'))
-        print(f"[CLIENT] Sent: {message}")
-        return f"Me: {message}"
-    except socket.error as e:
-        print(f"[CLIENT] Error sending message: {e}")
-        is_connected = False
-        return f"Error sending message: {e}", 500
 
 @app.route('/get_messages')
 def get_messages_route():
@@ -156,7 +138,8 @@ if __name__ == "__main__":
     else:
         api_port = 5001
     
-    print(f"[CLIENT BRIDGE] Starting Flask API server on http://127.0.0.1:{api_port}")
+    print(f"[CLIENT BRIDGE] Starting Flask API server on https://127.0.0.1:{api_port}")
     print("[CLIENT BRIDGE] This script acts as a bridge for the clientGUI.html file.")
-    
-    app.run(port=api_port, debug=True, use_reloader=False)
+    # Cấu hình SSL context
+    ssl_context = ('cert.pem', 'key.pem')
+    app.run(port=api_port, ssl_context=ssl_context, debug=True, use_reloader=False)

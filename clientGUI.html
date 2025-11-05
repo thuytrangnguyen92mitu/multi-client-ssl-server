@@ -134,23 +134,16 @@
             rows="8"
         ></textarea>
 
-        <label for="message">Message:</label>
-        <div class="input-group">
-            <input type="text" id="message" placeholder="Enter message to send" />
-            <button class="btn btn-orange" onclick="sendMessage()">Send</button>
-        </div>
-        </div>
-
         <script>
         // This is no longer a constant. We will build it dynamically.
-        let API_URL = "http://127.0.0.1:5001";
+        let API_URL = "https://127.0.0.1";
         let messagePollInterval;
 
         // --- NEW FUNCTION ---
         // This function builds the API_URL based on the input field
         function getApiUrl() {
             const port = document.getElementById("apiPort").value;
-            return `http://127.0.0.1:${port}`;
+            return `https://127.0.0.1:${port}`;
         }
 
         function log(message) {
@@ -168,7 +161,7 @@
             .then((res) => res.text())
             .then((msg) => {
                 log(msg);
-                if (msg.startsWith("✅")) {
+                if (msg.startsWith("Đã kết nối đến Server")) {
                 document.getElementById("btnConnect").disabled = true;
                 document.getElementById("btnDisconnect").disabled = false;
                 document.getElementById("apiPort").disabled = true; // Lock port field
@@ -192,20 +185,6 @@
                 if (messagePollInterval) {
                 clearInterval(messagePollInterval);
                 }
-            })
-            .catch((e) => log(`Error: ${e.message}`));
-        }
-
-        function sendMessage() {
-            API_URL = getApiUrl();
-            const message = document.getElementById("message").value;
-            if (!message) return;
-
-            fetch(`${API_URL}/send?message=${encodeURIComponent(message)}`)
-            .then((res) => res.text())
-            .then((msg) => {
-                log(msg);
-                document.getElementById("message").value = "";
             })
             .catch((e) => log(`Error: ${e.message}`));
         }

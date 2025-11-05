@@ -3,6 +3,7 @@ from flask_cors import CORS
 import socket
 import threading
 import sys
+from OpenSSL import SSL
 
 # --- Cài Flask App  ---
 app = Flask(__name__)
@@ -230,8 +231,14 @@ def broadcast_route():
 
 # --- Main Execution ---
 if __name__ == "__main__":
-    print("[API] Starting Flask API server on http://127.0.0.1:5000")
-    print("[API] This server controls the main socket server.")
-    # Chạy Flask trong luồng chính
-    app.run(port=5000)
+    print("[API] Starting secure Flask API server on https://127.0.0.1:5000")
+    print("[API] This server controls the main socket server (with SSL).")
+
+    # Cấu hình SSL context
+    ssl_context = ('cert.pem', 'key.pem')
+
+    # Chạy Flask HTTPS server
+    # app.run(host="127.0.0.1", port=5000, ssl_context=ssl_context)
+app.run(port=5000, ssl_context=ssl_context, debug=True, use_reloader=False)
+
 
